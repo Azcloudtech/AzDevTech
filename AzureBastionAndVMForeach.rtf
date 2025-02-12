@@ -1,0 +1,273 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}}
+{\*\generator Riched20 10.0.19041}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\f0\fs22\lang9\par
+\b\fs40 AzureBastionAndVMForeach:\b0\fs22\par
+\par
+The goal is to create:\par
+\par
+A Virtual Network (VNet) with subnets.\par
+A Virtual Machine (VM) within that VNet.\par
+An Azure Bastion Host deployed in the VNet.\par
+Necessary configurations and resources to securely connect to the VM via Azure Bastion.\par
+\par
+\b Tf Code: \par
+a. Resource Group\par
+\par
+
+\pard\sl276\slmult1\b0 resource "azurerm_resource_group" "example" \{\par
+  name     = "myResourceGroup"\par
+  location = "East US"\par
+
+\pard\sa200\sl276\slmult1\}\par
+\b\par
+b. Virtual Network and Subnets\par
+
+\pard\sl240\slmult1\b0 resource "azurerm_virtual_network" "example" \{\par
+  name                = "myVnet"\par
+  address_space       = ["10.0.0.0/16"]\par
+  location            = azurerm_resource_group.example.location\par
+  resource_group_name = azurerm_resource_group.example.name\par
+
+\pard\sa200\sl276\slmult1\b\}\par
+
+\pard\sl276\slmult1\b0 resource "azurerm_subnet" "default" \{\par
+  name                 = "default"\par
+  resource_group_name  = azurerm_resource_group.example.name\par
+  virtual_network_name = azurerm_virtual_network.example.name\par
+  address_prefixes     = ["10.0.1.0/24"]\par
+
+\pard\sa200\sl276\slmult1\b\}\par
+
+\pard\sl276\slmult1\b0 resource "azurerm_subnet" "bastion" \{\par
+  name                 = "AzureBastionSubnet"\par
+  resource_group_name  = azurerm_resource_group.example.name\par
+  virtual_network_name = azurerm_virtual_network.example.name\par
+  address_prefixes     = ["10.0.2.0/24"]\par
+
+\pard\sa200\sl276\slmult1\b\}\par
+\par
+c. Public IP Address for Bastion\par
+
+\pard\sl276\slmult1\b0 resource "azurerm_public_ip" "example" \{\par
+  name                = "myBastionPublicIP"\par
+  location            = azurerm_resource_group.example.location\par
+  resource_group_name = azurerm_resource_group.example.name\par
+  allocation_method   = "Static"\par
+  sku                 = "Standard"\par
+
+\pard\sa200\sl276\slmult1\}\b\par
+\par
+d. Azure Bastion Host\par
+
+\pard\sl276\slmult1\b0 resource "azurerm_bastion_host" "example" \{\par
+  name                = "myBastionHost"\par
+  location            = azurerm_resource_group.example.location\par
+  resource_group_name = azurerm_resource_group.example.name\par
+  dns_name            = "mybastionhost"\par
+  sku                 = "Basic"\par
+  \par
+  ip_configuration \{\par
+    name                 = "bastionIpConfig"\par
+    subnet_id            = azurerm_subnet.bastion.id\par
+    public_ip_address_id = azurerm_public_ip.example.id\par
+  \}\par
+\}\par
+
+\pard\sa200\sl276\slmult1\par
+\b e. Virtual Machine\par
+
+\pard\sl276\slmult1\b0 resource "azurerm_network_interface" "example" \{\par
+  name                = "myVMNic"\par
+  location            = azurerm_resource_group.example.location\par
+  resource_group_name = azurerm_resource_group.example.name\par
+  ip_configuration \{\par
+    name                          = "internal"\par
+    subnet_id                     = azurerm_subnet.default.id\par
+    private_ip_address_allocation = "Dynamic"\par
+  \}\par
+\}\par
+\par
+resource "azurerm_virtual_machine" "example" \{\par
+  name                = "myVM"\par
+  location            = azurerm_resource_group.example.location\par
+  resource_group_name = azurerm_resource_group.example.name\par
+  network_interface_ids = [\par
+    azurerm_network_interface.example.id,\par
+  ]\par
+  vm_size             = "Standard_DS1_v2"\par
+\par
+  storage_os_disk \{\par
+    name              = "myosdisk1"\par
+    caching           = "ReadWrite"\par
+    create_option     = "FromImage"\par
+    managed           = true\par
+    disk_size_gb      = 30\par
+  \}\par
+\par
+  storage_image_reference \{\par
+    publisher = "MicrosoftWindowsServer"\par
+    offer     = "WindowsServer"\par
+    sku       = "2019-Datacenter"\par
+    version   = "latest"\par
+  \}\par
+\par
+  os_profile \{\par
+    computer_name  = "myVM"\par
+    admin_username = "azureuser"\par
+    admin_password = "Password1234!"\par
+  \}\par
+\par
+  os_profile_windows_config \{\par
+    provision_vm_agent = true\par
+  \}\par
+\}\par
+\par
+\par
+\par
+Certainly! Terraform is a popular Infrastructure as Code (IaC) tool that allows you to define and provision cloud infrastructure using a declarative configuration language. Below, I'll explain how to set up Azure Bastion with a Virtual Machine (VM) using Terraform code.\par
+\par
+Overview\par
+The goal is to create:\par
+\par
+A Virtual Network (VNet) with subnets.\par
+A Virtual Machine (VM) within that VNet.\par
+An Azure Bastion Host deployed in the VNet.\par
+Necessary configurations and resources to securely connect to the VM via Azure Bastion.\par
+Terraform Code Example\par
+1. Provider Configuration\par
+Start by specifying the Azure provider and configuring the necessary credentials.\par
+\par
+hcl\par
+Copy code\par
+provider "azurerm" \{\par
+  features \{\}\par
+\}\par
+2. Define Resources\par
+Here is a complete Terraform configuration that sets up the necessary Azure resources:\par
+\par
+a. Resource Group\par
+\par
+hcl\par
+Copy code\par
+resource "azurerm_resource_group" "example" \{\par
+  name     = "myResourceGroup"\par
+  location = "East US"\par
+\}\par
+b. Virtual Network and Subnets\par
+\par
+hcl\par
+Copy code\par
+resource "azurerm_virtual_network" "example" \{\par
+  name                = "myVnet"\par
+  address_space       = ["10.0.0.0/16"]\par
+  location            = azurerm_resource_group.example.location\par
+  resource_group_name = azurerm_resource_group.example.name\par
+\}\par
+\par
+resource "azurerm_subnet" "default" \{\par
+  name                 = "default"\par
+  resource_group_name  = azurerm_resource_group.example.name\par
+  virtual_network_name = azurerm_virtual_network.example.name\par
+  address_prefixes     = ["10.0.1.0/24"]\par
+\}\par
+\par
+resource "azurerm_subnet" "bastion" \{\par
+  name                 = "AzureBastionSubnet"\par
+  resource_group_name  = azurerm_resource_group.example.name\par
+  virtual_network_name = azurerm_virtual_network.example.name\par
+  address_prefixes     = ["10.0.2.0/24"]\par
+\}\par
+c. Public IP Address for Bastion\par
+\par
+hcl\par
+Copy code\par
+resource "azurerm_public_ip" "example" \{\par
+  name                = "myBastionPublicIP"\par
+  location            = azurerm_resource_group.example.location\par
+  resource_group_name = azurerm_resource_group.example.name\par
+  allocation_method   = "Static"\par
+  sku                 = "Standard"\par
+\}\par
+d. Azure Bastion Host\par
+\par
+hcl\par
+Copy code\par
+resource "azurerm_bastion_host" "example" \{\par
+  name                = "myBastionHost"\par
+  location            = azurerm_resource_group.example.location\par
+  resource_group_name = azurerm_resource_group.example.name\par
+  dns_name            = "mybastionhost"\par
+  sku                 = "Basic"\par
+  \par
+  ip_configuration \{\par
+    name                 = "bastionIpConfig"\par
+    subnet_id            = azurerm_subnet.bastion.id\par
+    public_ip_address_id = azurerm_public_ip.example.id\par
+  \}\par
+\}\par
+e. Virtual Machine\par
+\par
+hcl\par
+Copy code\par
+resource "azurerm_network_interface" "example" \{\par
+  name                = "myVMNic"\par
+  location            = azurerm_resource_group.example.location\par
+  resource_group_name = azurerm_resource_group.example.name\par
+  ip_configuration \{\par
+    name                          = "internal"\par
+    subnet_id                     = azurerm_subnet.default.id\par
+    private_ip_address_allocation = "Dynamic"\par
+  \}\par
+\}\par
+\par
+resource "azurerm_virtual_machine" "example" \{\par
+  name                = "myVM"\par
+  location            = azurerm_resource_group.example.location\par
+  resource_group_name = azurerm_resource_group.example.name\par
+  network_interface_ids = [\par
+    azurerm_network_interface.example.id,\par
+  ]\par
+  vm_size             = "Standard_DS1_v2"\par
+\par
+  storage_os_disk \{\par
+    name              = "myosdisk1"\par
+    caching           = "ReadWrite"\par
+    create_option     = "FromImage"\par
+    managed           = true\par
+    disk_size_gb      = 30\par
+  \}\par
+\par
+  storage_image_reference \{\par
+    publisher = "MicrosoftWindowsServer"\par
+    offer     = "WindowsServer"\par
+    sku       = "2019-Datacenter"\par
+    version   = "latest"\par
+  \}\par
+\par
+  os_profile \{\par
+    computer_name  = "myVM"\par
+    admin_username = "azureuser"\par
+    admin_password = "Password1234!"\par
+  \}\par
+\par
+  os_profile_windows_config \{\par
+    provision_vm_agent = true\par
+  \}\par
+\}\par
+\par
+\b Explanation:\b0\par
+\par
+
+\pard\sl360\slmult1\b Resource Group: \b0 A container for your resources.\par
+\b Virtual Network (VNet): \b0 Defines the network in which the VM and Bastion will reside.\par
+\b Subnets: \b0 default for the VM and AzureBastionSubnet specifically for Bastion.\par
+\b Public IP Address: \b0 Required for Azure Bastion to be reachable from the internet.\par
+\b Azure Bastion Host: \b0 Deployed in the AzureBastionSubnet and configured to use the public IP.\par
+\b Network Interface: \b0 Created for the VM, allowing it to communicate within the VNet.\par
+\b Virtual Machine: \b0 The actual compute resource that will be managed and accessed through Bastion.\par
+\par
+This setup ensures that your VM is not exposed directly to the public internet while still allowing secure management through Azure Bastion.\par
+
+\pard\sa200\sl276\slmult1\par
+}
+ 
